@@ -1,55 +1,38 @@
-import axios from "axios";
+// By WillZek >> https://github.com/WillZek
 
-const handler = async (m, { conn, text }) => {
-  const datas = global;
-  const idioma = datas.db.data.users[m.sender].language || global.defaultLenguaje;
-  const _translate = JSON.parse(
-    fs.readFileSync(`./src/languages/${idioma}.json`),
-  );
-  const tradutor = _translate.plugins.downloader_soundcloud;
-  if (!text) throw `${tradutor.texto1}`;
-  try {
-    const searchxd = await axios.get(global.BASE_API_DELIRIUS + "/search/soundcloud",
-      {
-        params: {
-          q: text,
-          limit: 1
-        },
-      },
-    );
-    const shdata = searchxd.data.data[0];
-    const downloadzd = await axios.get(global.BASE_API_DELIRIUS + "/download/soundcloud",
-      {
-        params: {
-          url: shdata.link,
-        },
-      },
-    );
-    const downloadres = downloadzd.data.data;
-    const soundcloudt = `*亗 S O U N D C L O U D*\n
-*› Titulo :* ${downloadres.title || "-"}
-*› Artista:* ${downloadres.author.username || "-"}
-*› Id :* ${downloadres.author.id || "-"}
-*› Followers :* ${downloadres.author.followers_count || "-"}
-*› Likes :* ${downloadres.author.likes_count || "-"}
-*› Publicado :* ${new Date(downloadres.author.created_at).toLocaleDateString() || "-"}
-*› Url :* ${shdata.link || "-"}`;
-    const imgxd =
-      downloadres.imageURL.replace("t500x500", "t1080x1080") ||
-      downloadres.imageURL;
-    await conn.sendFile(m.chat, imgxd, "", soundcloudt, m);
-    await conn.sendMessage(
-      m.chat,
-      {
-        audio: { url: downloadres.url },
-        fileName: `${downloadres.title}.mp3`,
-        mimetype: "audio/mpeg",
-      },
-      { quoted: m },
-    );
-  } catch {
-    throw `${tradutor.texto3}`;
+import fetch from 'node-fetch';
+import fg from 'senna-fg';
+
+let handler = async(m, { conn, usedPrefix, command, text }) => {
+
+if (!text) return m.reply(`🍭 Ingresa Un Texto Para Buscar En Youtube\n> *Ejemplo:* ${usedPrefix + command} crow edits`);
+
+try {
+let api = await (await fetch(`https://delirius-apiofc.vercel.app/search/ytsearch?q=${text}`)).json();
+
+let results = api.data[0];
+
+let txt = `✨ *Título:* ${results.title}\n⌛ *Duración:* ${results.duration}\n📎 *Link:* ${results.url}\n📆 *Publicado:* ${results.publishedAt}`;
+
+let img = results.image;
+
+conn.sendMessage(m.chat, { image: { url: img }, caption: txt }, { quoted: m });
+
+/* let api2 = await(await fetch(`https://api.neoxr.eu/api/youtube?url=${results.url}&type=audio&quality=128kbps&apikey=GataDios`)).json();
+
+if (!api2?.data.url) return m.reply('No Se  Encontraron Resultados');
+*/
+
+let api2 = await(await fetch(`https://api.vreden.my.id/api/ytmp3?url=${results.url}`)).json();
+
+conn.sendMessage(m.chat, { audio: { url: api2.result.download.url }, mimetype: 'audio/mpeg' }, { quoted: m });
+
+} catch (e) {
+m.reply(`*No Encontramos Resultados Para Tu Búsqueda* ${e.message}\n> Posdata: Me Pica Un Webo`);
+m.react('✖️');
   }
-};
-handler.command = /^(soundcloud|cover)$/i;
-export default handler;
+}
+
+handler.command = ['play', 'paudio'];
+
+export default handler
